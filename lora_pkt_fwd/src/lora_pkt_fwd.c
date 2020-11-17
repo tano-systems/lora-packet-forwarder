@@ -131,6 +131,7 @@ static bool fwd_nocrc_pkt = false; /* packets with NO PAYLOAD CRC are NOT forwar
 static uint64_t lgwm = 0; /* Lora gateway MAC address */
 static char serv_addr[64] = STR(DEFAULT_SERVER); /* address of the server (host name or IPv4/IPv6) */
 static char spi_device_path[64] = {0}; /* custom SPI device path */
+static int spi_device_speed = 0; /* custom SPI device speed */
 static char serv_port_up[8] = STR(DEFAULT_PORT_UP); /* server port for upstream traffic */
 static char serv_port_down[8] = STR(DEFAULT_PORT_DW); /* server port for downstream traffic */
 static int keepalive_time = DEFAULT_KEEPALIVE; /* send a PULL_DATA request every X seconds, negative = disabled */
@@ -705,6 +706,13 @@ static int parse_gateway_configuration(const char * conf_file) {
         MSG("INFO: SPI device is configured to \"%s\"\n", spi_device_path);
     }
 
+    /* spi device speed (optional) */
+    val = json_object_get_value(conf_obj, "spi_speed");
+    if (val != NULL) {
+        spi_device_speed = (int)json_value_get_number(val);
+        MSG("INFO: SPI device speed is configured to %d Hz\n", spi_device_speed);
+    }
+
     /* get up and down ports (optional) */
     val = json_object_get_value(conf_obj, "serv_port_up");
     if (val != NULL) {
@@ -1201,6 +1209,10 @@ int main(void)
     /* set custom SPI device path if configured */
     if (strlen(spi_device_path) > 0)
         lgw_spi_set_path(spi_device_path);
+
+    /* set custom SPI device speed if configured */
+    if (spi_device_speed > 0)
+        lgw_spi_set_speed(spi_device_speed);
 
     /* starting the concentrator */
     i = lgw_start();
