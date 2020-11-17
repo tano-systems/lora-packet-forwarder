@@ -130,6 +130,7 @@ static bool fwd_nocrc_pkt = false; /* packets with NO PAYLOAD CRC are NOT forwar
 /* network configuration variables */
 static uint64_t lgwm = 0; /* Lora gateway MAC address */
 static char serv_addr[64] = STR(DEFAULT_SERVER); /* address of the server (host name or IPv4/IPv6) */
+static char spi_device_path[64] = {0}; /* custom SPI device path */
 static char serv_port_up[8] = STR(DEFAULT_PORT_UP); /* server port for upstream traffic */
 static char serv_port_down[8] = STR(DEFAULT_PORT_DW); /* server port for downstream traffic */
 static int keepalive_time = DEFAULT_KEEPALIVE; /* send a PULL_DATA request every X seconds, negative = disabled */
@@ -697,6 +698,13 @@ static int parse_gateway_configuration(const char * conf_file) {
         MSG("INFO: server hostname or IP address is configured to \"%s\"\n", serv_addr);
     }
 
+    /* spi device path (optional) */
+    str = json_object_get_string(conf_obj, "spi_device");
+    if (str != NULL) {
+        strncpy(spi_device_path, str, sizeof(spi_device_path)-1);
+        MSG("INFO: SPI device is configured to \"%s\"\n", spi_device_path);
+    }
+
     /* get up and down ports (optional) */
     val = json_object_get_value(conf_obj, "serv_port_up");
     if (val != NULL) {
@@ -1189,6 +1197,10 @@ int main(void)
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(result);
+
+    /* set custom SPI device path if configured */
+    if (strlen(spi_device_path) > 0)
+        lgw_spi_set_path(spi_device_path);
 
     /* starting the concentrator */
     i = lgw_start();
